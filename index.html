@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FluxDrive</title>
+<meta name="description" content="FluxDrive: differentiable flux forecasting and planning for end-to-end autonomous driving.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/katex/katex.min.css">
+<link rel="stylesheet" href="style.css?v=103">
+<script src="assets/katex/katex.min.js" defer></script>
+<script src="app.js?v=63" defer></script>
+<script src="fx.js?v=95" defer></script>
+<script src="diagrams.js?v=60" defer></script>
+<script src="charts.js?v=65" defer></script>
+<script src="fluid.js?v=9" defer></script>
+<script src="gallery.js?v=94" defer></script>
+<script src="scenes.js?v=8" defer></script>
+<script src="islands.js?v=93" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="bg" aria-hidden="true"></div>
+
+<header class="nav" data-nav>
+  <div class="container nav__in">
+    <nav class="nav__links seg seg--nav" aria-label="Sections">
+      <a href="#idea">Idea</a>
+      <a href="#overview">Method</a>
+      <a href="#method">Demos</a>
+      <a href="#results">Results</a>
+      <a href="#cite">Cite</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero" id="top" aria-labelledby="hero-head">
+  <div id="hero-wave"></div>
+  <noscript><h1 id="hero-head">FluxDrive: Differentiable Flux Forecasting and Planning for End-to-End Autonomous Driving</h1></noscript>
+</section>
+
+<section class="sec" id="glance" aria-labelledby="glance-head">
+  <div class="container">
+    <div class="sec__head"><h2 id="glance-head">Closed-loop performance</h2></div>
+    <div class="charts">
+      <figure class="chartcard"><figcaption><b>HUGSIM</b></figcaption><div data-chart="radar"></div></figure>
+      <figure class="chartcard"><figcaption><b>Odyssey</b></figcaption><div data-chart="odyssey"></div></figure>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="idea" aria-labelledby="idea-head">
+  <div class="container narrow">
+    <h2 id="idea-head">Models see the cars. Plans still hit them.</h2>
+    <p class="lead">FluxDrive plans over a cost map, so every detected car enters the planner's objective.</p>
+  </div>
+  <div class="container">
+    <div class="scenes">
+      <figure class="scene"><figcaption><b>Usual planner</b><span>sees the car, but scores candidates without it</span></figcaption><canvas data-scene="before" class="scene-cv" aria-label="The usual planner keeps its speed and path and hits the car cutting in"></canvas></figure>
+      <figure class="scene"><figcaption><b>FluxDrive</b><span>turns the forecast into cost on BEV cells and plans on them</span></figcaption><canvas data-scene="after" class="scene-cv" aria-label="FluxDrive slows behind the car cutting in and keeps a gap"></canvas></figure>
+    </div>
+  </div>
+</section>
+
+
+<section class="sec" id="overview" aria-labelledby="ov-head">
+  <div class="container">
+    <div class="sec__head">
+      <h2 id="ov-head">Method overview</h2>
+      <p class="lead">Cameras and a command in, a 3&nbsp;s trajectory out. Everything in between lives on one 40&nbsp;×&nbsp;80 grid.</p>
+    </div>
+    <div class="dgwell" data-diagram="overview"></div>
+    <ol class="parts">
+      <li><h3>BEV feature</h3><p>Each cell gets a feature, an occupancy and a velocity. No ego status.</p></li>
+      <li><h3>Flux forecast</h3><p>Occupancy moves across cell faces, so a car keeps its area.</p></li>
+      <li><h3>Cost map</h3><p>A cell costs the overlap of the ego footprint with the forecast.</p></li>
+      <li><h3>Flux Value Iteration</h3><p>The ego's probability flows across the same faces, summing every path.</p></li>
+      <li><h3>Training</h3><p>MaxEnt IRL trains the cost; a safety loss adds the margin.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="sec" id="fluid" aria-labelledby="fluid-head">
+  <div class="container">
+    <div class="sec__head">
+      <h2 id="fluid-head">Flux, like water</h2>
+      <p class="lead">Split space into cells. A flux is how much crosses the face between two cells in one step: the upwind cell's amount times the speed across the face. What cell i loses, cell j gains, so nothing is created or lost.</p>
+    </div>
+    <div class="fluid">
+      <figure class="fluid__card"><figcaption><b>Water</b><span>hover to zoom into the faces; move to stir</span></figcaption><canvas data-water aria-label="Fluid simulation carrying dye"></canvas>
+        <p class="lensline" data-out="w-face"></p>
+        <dl class="readout readout--3"><div><dt>Dye in the grid</dt><dd data-out="w-in">0</dd></div><div><dt>Poured in</dt><dd data-out="w-add">0</dd></div><div><dt>Left through edges</dt><dd data-out="w-out">0</dd></div></dl></figure>
+      <figure class="fluid__card"><figcaption><b>FluxDrive</b><span>hover to zoom; the same update moves occupied area</span></figcaption><canvas data-cars aria-label="Occupied area of three cars carried by the same flux"></canvas>
+        <p class="lensline" data-out="c-face"></p>
+        <dl class="readout readout--3"><div><dt>Occupied area now</dt><dd data-out="c-area">0</dd></div><div><dt>At the start</dt><dd data-out="c-area0">0</dd></div><div><dt>Velocity</dt><dd>from the head</dd></div></dl></figure>
+    </div>
+    <div class="fluid__eq">
+      <span class="tex" data-tex="F_{ij} = \delta\,\ell_{ij}\big([u_{ij}]_+\,\rho_i - [u_{ij}]_-\,\rho_j\big),\qquad m_i \leftarrow m_i - \textstyle\sum_j F_{ij}"></span>
+      <label class="toggle"><input type="checkbox" data-in="faces" checked> Show face flux</label>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec--method" id="method" aria-labelledby="method-head">
+  <div class="container">
+    <div class="sec__head">
+      <h2 id="method-head">Try each part</h2>
+      <p class="lead">Each part, live on a small grid. Drag the cars and move the sliders.</p>
+    </div>
+
+    <!-- 1 Flux forecast -->
+    <article class="demo" id="demo-flux">
+      <div class="demo__text">
+        <p class="step">1</p>
+        <h3>Flux forecast</h3>
+        <p>What leaves one cell enters its neighbour, so a car stays the size of a car. A Gaussian forecast blurs it into a faint cloud.</p>
+        <div class="ctl">
+          <div class="seg" role="radiogroup" aria-label="Forecast type">
+            <button role="radio" aria-checked="true" data-mode="flux">Flux</button>
+            <button role="radio" aria-checked="false" data-mode="blur">Gaussian</button>
+          </div>
+          <label class="slider">Time <output data-out="t">0.0 s</output><input type="range" min="0" max="30" value="12" data-in="t"></label>
+        </div>
+        <dl class="readout">
+          <div><dt>Total area</dt><dd data-out="mass">0</dd></div>
+          <div><dt>Peak occupancy</dt><dd data-out="peak">0</dd></div>
+        </dl>
+        <p class="hint">Drag a car or its arrow. Keys: Space, arrows, Shift + arrows.</p>
+      </div>
+      <div class="demo__pane glass"><canvas data-canvas width="720" height="480" aria-label="Flux forecast grid"></canvas></div>
+    </article>
+
+    <!-- 2 Overlap cost -->
+    <article class="demo" id="demo-cost">
+      <div class="demo__text">
+        <p class="step">2</p>
+        <h3>Cost from overlap</h3>
+        <p>A cell costs how much the ego footprint, placed there, overlaps the forecast at that step.</p>
+        <div class="ctl">
+          <label class="slider">Time <output data-out="t">0.0 s</output><input type="range" min="0" max="30" value="10" data-in="t"></label>
+          <label class="slider">Ego size <output data-out="ego">2 × 1</output><input type="range" min="1" max="3" value="2" data-in="ego"></label>
+        </div>
+        <p class="hint">Hover to place the ego footprint.</p>
+        <dl class="readout"><div><dt>Overlap at cursor</dt><dd data-out="ov">0</dd></div></dl>
+      </div>
+      <div class="demo__pane glass"><canvas data-canvas width="720" height="480" aria-label="Overlap cost grid"></canvas></div>
+    </article>
+
+    <!-- 3 FVI -->
+    <article class="demo" id="demo-fvi">
+      <div class="demo__text">
+        <p class="step">3</p>
+        <h3>Flux Value Iteration</h3>
+        <p>The ego's probability flows across the same faces, summing every grid path. Cheap paths gather it; paths past a car lose it.</p>
+        <div class="ctl">
+          <label class="slider">Temperature <output data-out="temp">1.0</output><input type="range" min="2" max="30" value="6" data-in="temp"></label>
+          <label class="slider">Safety margin <output data-out="margin">0</output><input type="range" min="0" max="3" value="1" data-in="margin"></label>
+        </div>
+        <dl class="readout">
+          <div><dt>Probability within one cell of a car</dt><dd data-out="hit">0</dd></div>
+          <div><dt>Reaches the goal row</dt><dd data-out="reach">0</dd></div>
+        </dl>
+        <p class="hint">Click to set the goal; drag cars to block it.</p>
+      </div>
+      <div class="demo__pane glass"><canvas data-canvas width="720" height="480" aria-label="Flux Value Iteration grid"></canvas></div>
+    </article>
+
+    <!-- 4 Learning -->
+    <article class="demo" id="demo-learn">
+      <div class="demo__text">
+        <p class="step">4</p>
+        <h3>Learning the cost</h3>
+        <p>At step 0 the cost knows nothing and the plan drives through the car. IRL raises the cost where the model goes and the logged drive does not, until the plan follows the drive. Drag a car to retrain.</p>
+        <div class="ctl">
+          <label class="toggle"><input type="checkbox" data-in="safety" checked> Safety loss</label>
+          <label class="slider">Training step <output data-out="it">0</output><input type="range" min="0" max="20" value="0" data-in="it"></label>
+        </div>
+        <dl class="readout">
+          <div><dt>Logged-path likelihood (log)</dt><dd data-out="ll">0</dd></div>
+          <div><dt>Closest pass to a car</dt><dd data-out="gap">0</dd></div>
+        </dl>
+      </div>
+      <div class="demo__pane glass"><canvas data-canvas width="720" height="480" aria-label="Cost learning grid"></canvas></div>
+    </article>
+  </div>
+</section>
+
+<section class="sec" id="drives" aria-labelledby="drives-head">
+  <div class="container">
+    <div class="sec__head"><h2 id="drives-head">Closed-loop driving video</h2></div>
+    <div class="gv" id="gallery"></div>
+  </div>
+</section>
+
+
+<section class="sec" id="results" aria-labelledby="results-head">
+  <div class="container">
+    <div class="sec__head">
+      <h2 id="results-head">Results</h2>
+      <p class="lead">Official checkpoints for every baseline. Bold: best within the same training data.</p>
+    </div>
+    <div class="seg seg--tabs" role="tablist" aria-label="Benchmark" data-tabs>
+      <button role="tab" aria-selected="true" aria-controls="t-hugsim">HUGSIM</button>
+      <button role="tab" aria-selected="false" aria-controls="t-ody">Odyssey</button>
+      <button role="tab" aria-selected="false" aria-controls="t-alp">AlpaSim</button>
+      <button role="tab" aria-selected="false" aria-controls="t-abl">Ablations</button>
+    </div>
+<div id="results-wave"></div>
+<div id="tables-src" hidden>
+<div class="tablewrap" id="t-hugsim" role="tabpanel"><table><thead><tr><th>Method</th><th>Ego status</th><th>NC ↑</th><th>DAC ↑</th><th>TTC ↑</th><th>COM ↑</th><th>RC ↑</th><th>HD ↑</th></tr></thead><tbody><tr class="grp"><td colspan="8">Trained on nuScenes</td></tr><tr><td>ST-P3</td><td>×</td><td>67.4</td><td>90.8</td><td>59.4</td><td>54.3</td><td>43.0</td><td>27.5</td></tr><tr><td>UniAD-Base</td><td>✓</td><td>57.0</td><td>79.8</td><td>40.7</td><td>47.2</td><td>43.5</td><td>21.8</td></tr><tr><td>VAD-Tiny</td><td>✓</td><td>42.9</td><td>84.2</td><td>34.3</td><td><b>99.6</b></td><td>31.7</td><td>12.8</td></tr><tr><td>VAD-Base</td><td>✓</td><td>56.2</td><td>74.9</td><td>46.8</td><td>98.5</td><td>25.4</td><td>12.5</td></tr><tr><td>GenAD</td><td>✓</td><td>53.1</td><td>87.9</td><td>44.9</td><td>93.2</td><td>31.4</td><td>17.4</td></tr><tr><td>SparseDrive</td><td>×</td><td>61.0</td><td>77.1</td><td>51.8</td><td>86.9</td><td>11.8</td><td>5.6</td></tr><tr><td>SSR</td><td>✓</td><td>52.0</td><td>66.1</td><td>40.6</td><td>92.8</td><td>20.3</td><td>7.9</td></tr><tr class=ours><td>FluxDrive (Ours)</td><td>×</td><td><b>76.0</b></td><td><b>97.8</b></td><td><b>71.1</b></td><td>91.8</td><td><b>57.4</b></td><td><b>47.3</b></td></tr><tr class="grp"><td colspan="8">Trained on NAVSIM</td></tr><tr><td>DriveSuprim</td><td>✓</td><td>53.1</td><td>94.7</td><td>48.6</td><td>89.9</td><td>39.0</td><td>24.7</td></tr><tr><td>RAP†</td><td>✓</td><td>51.8</td><td>93.4</td><td>47.0</td><td>61.1</td><td>42.7</td><td>24.2</td></tr><tr><td>DrivoR†</td><td>✓</td><td>55.9</td><td>95.8</td><td>52.1</td><td>93.2</td><td>49.8</td><td>35.0</td></tr><tr><td>SparseDriveV2</td><td>✓</td><td>55.1</td><td>92.2</td><td>50.0</td><td><b>97.4</b></td><td>49.0</td><td>33.7</td></tr><tr><td>FPD-Drive†‡</td><td>✓</td><td><b>73.3</b></td><td><b>97.1</b></td><td><b>70.7</b></td><td>83.3</td><td>46.5</td><td>37.8</td></tr><tr class=ours><td>FluxDrive (Ours)</td><td>×</td><td>63.2</td><td>93.7</td><td>56.9</td><td>88.1</td><td><b>58.8</b></td><td><b>42.3</b></td></tr></tbody></table><p class="tcap">345 routes, four datasets, four difficulty levels. All in %. † ego status in the planner, ‡ extra training data.</p></div>
+<div class="tablewrap" id="t-ody" role="tabpanel" hidden><table><thead><tr><th rowspan="2">Method</th><th rowspan="2">Ego status</th><th rowspan="2">Training data</th><th colspan="2">Non-reactive</th><th colspan="2">Reactive</th></tr><tr><th>RouteDS ↑</th><th>SDC ↑</th><th>RouteDS ↑</th><th>SDC ↑</th></tr></thead><tbody><tr><td>LTF</td><td>✓</td><td>navtrain 103k</td><td>16.2</td><td>51</td><td>16.3</td><td>54</td></tr><tr><td>DiffusionDrive</td><td>✓</td><td>navtrain 103k</td><td>25.6</td><td>59</td><td>24.2</td><td>59</td></tr><tr><td>ReCogDrive</td><td>✓</td><td>navtrain 103k</td><td>15.4</td><td><b>71</b></td><td>20.3</td><td>62</td></tr><tr><td>DrivoR</td><td>✓</td><td>navtrain 103k</td><td>20.6</td><td>50</td><td>25.5</td><td>53</td></tr><tr><td>SafeDrive</td><td>✓</td><td>navtrain 103k</td><td>27.5</td><td>41</td><td>30.4</td><td>45</td></tr><tr class=ours><td>FluxDrive (Ours)</td><td>×</td><td>nuScenes 28k</td><td><b>29.8</b></td><td>66</td><td><b>30.9</b></td><td><b>69</b></td></tr><tr class=ours><td>FluxDrive (Ours)</td><td>×</td><td>navtrain 103k</td><td>26.6</td><td>64</td><td>29.3</td><td>58</td></tr></tbody></table><p class="tcap">Long nuPlan routes with only a driving command. SDC: share of distance completed.</p></div>
+<div class="tablewrap" id="t-alp" role="tabpanel" hidden><table><thead><tr><th>Method</th><th>Ego status</th><th>Score ↑</th><th>Pass ↑</th><th>Coll. ↓</th><th>Off ↓</th><th>Prog. ↑</th></tr></thead><tbody><tr class="grp"><td colspan="7">Trained on nuScenes</td></tr><tr><td>ST-P3</td><td>×</td><td>33.5</td><td>43.2</td><td>11.8</td><td><b>28.1</b></td><td>46.7</td></tr><tr><td>UniAD-Base</td><td>✓</td><td>27.4</td><td>34.2</td><td>8.6</td><td>41.7</td><td>46.3</td></tr><tr><td>VAD-Base</td><td>✓</td><td>17.6</td><td>28.2</td><td>20.3</td><td>39.4</td><td>40.2</td></tr><tr><td>GenAD</td><td>✓</td><td>17.6</td><td>26.1</td><td>24.3</td><td>34.8</td><td>45.2</td></tr><tr><td>SparseDrive</td><td>×</td><td>19.2</td><td>30.0</td><td>14.8</td><td>37.6</td><td>34.4</td></tr><tr><td>SSR</td><td>✓</td><td>18.9</td><td>37.6</td><td>18.4</td><td>35.1</td><td>31.6</td></tr><tr class=ours><td>FluxDrive (Ours)</td><td>×</td><td><b>39.7</b></td><td><b>53.5</b></td><td><b>6.0</b></td><td><b>28.1</b></td><td><b>48.7</b></td></tr><tr class="grp"><td colspan="7">Trained on NAVSIM</td></tr><tr><td>DriveSuprim</td><td>✓</td><td>31.0</td><td>44.8</td><td>15.6</td><td>26.2</td><td>44.4</td></tr><tr><td>SparseDriveV2</td><td>✓</td><td>38.2</td><td>46.3</td><td>12.6</td><td>21.6</td><td>52.5</td></tr><tr><td>DrivoR†</td><td>✓</td><td>47.8</td><td>59.9</td><td>10.2</td><td>14.5</td><td>56.3</td></tr><tr><td>FPD-Drive†‡</td><td>✓</td><td>47.4</td><td><b>66.0</b></td><td>5.6</td><td><b>12.1</b></td><td>52.0</td></tr><tr class=ours><td>FluxDrive (Ours)</td><td>×</td><td><b>51.7</b></td><td>60.5</td><td><b>5.0</b></td><td>18.9</td><td><b>58.9</b></td></tr></tbody></table><p class="tcap">441 scenes, 3 rollouts each. Score is zero on an at-fault collision or leaving the road, otherwise progress.</p></div>
+<div class="tablewrap" id="t-abl" role="tabpanel" hidden><table><thead><tr><th>Safety loss</th><th>IRL</th><th>FVI</th><th>NC ↑</th><th>DAC ↑</th><th>TTC ↑</th><th>COM ↑</th><th>RC ↑</th><th>HD ↑</th><th>Off ↓</th></tr></thead><tbody><tr><td>✓</td><td></td><td></td><td>66.84</td><td>90.69</td><td>58.11</td><td>90.94</td><td>40.32</td><td>27.90</td><td>6.6</td></tr><tr><td></td><td>✓</td><td></td><td>67.20</td><td>94.67</td><td>58.44</td><td>95.88</td><td>45.78</td><td>35.15</td><td>4.1</td></tr><tr><td>✓</td><td>✓</td><td></td><td>67.45</td><td>93.38</td><td>58.97</td><td><b>96.34</b></td><td>39.19</td><td>28.83</td><td>8.4</td></tr><tr><td>✓</td><td></td><td>✓</td><td>75.28</td><td>97.08</td><td>69.50</td><td>94.62</td><td>58.81</td><td>49.28</td><td>2.6</td></tr><tr><td></td><td>✓</td><td>✓</td><td>72.58</td><td>97.12</td><td>66.20</td><td>94.78</td><td><b>64.70</b></td><td><b>52.22</b></td><td>2.4</td></tr><tr class=ours><td>✓</td><td>✓</td><td>✓</td><td><b>75.99</b></td><td><b>97.79</b></td><td><b>71.07</b></td><td>91.79</td><td>57.39</td><td>47.34</td><td><b>1.7</b></td></tr></tbody></table><p class="tcap">HUGSIM, 345 routes. Without FVI, an attention head picks among a few waypoint modes on the same costs.</p></div>
+</div>
+  </div>
+</section>
+
+<section class="ascii" data-ascii="assets/video/bg2.mp4" aria-label="The driving loop drawn as characters">
+  <canvas></canvas>
+</section>
+
+<section class="sec" id="cite" aria-labelledby="cite-head">
+  <div class="container narrow">
+    <h2 id="cite-head">Cite</h2>
+    <pre class="bib"><code>@article{fluxdrive2026,
+  title   = {FluxDrive: Differentiable Flux Forecasting and Planning
+             for End-to-End Autonomous Driving},
+  author  = {Song, Jaeha and Na, Jinhee and Jeong, Hawook and Hwang, Soonmin},
+  year    = {2026}
+}</code></pre>
+  </div>
+</section>
+
+</main>
+<footer class="foot"><div class="container">FluxDrive · 2026</div></footer>
+</body>
+</html>
