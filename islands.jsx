@@ -171,7 +171,7 @@ function HeroWave() {
       <p className="affil"><span><sup>1</sup>Hanyang University</span><span><sup>2</sup>RideFlux</span></p>
       <div className="actions">
         <a className="btn btn--ghost is-soon" aria-disabled="true" title="Coming soon">Paper</a>
-        <a className="btn btn--ghost" href="https://github.com/IRCVLab/FluxDrive">Code</a>
+        <a className="btn btn--ghost" href="https://github.com/archiiive99/FluxDrive">Code</a>
       </div>
     </div>
   );
