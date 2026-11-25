@@ -166,7 +166,7 @@ function HeroWave() {
   useEffect(() => { mountAurora(root.current); }, [on]);
   const centre = (
     <div className="hero-center">
-      <h1 id="hero-head"><span className="t-name" data-aurora>FluxDrive</span><span className="t-rest">Differentiable Flux Forecasting and Planning<br />for End&#8209;to&#8209;End Autonomous Driving</span></h1>
+      <h1 id="hero-head"><span className="t-name" data-aurora>FluxDrive</span><span className="t-rest">Differentiable Flux Forecasting and Planning <br />for End&#8209;to&#8209;End Autonomous Driving</span></h1>
       <p className="authors"><span>Jaeha Song<sup>1</sup></span><span>Jinhee Na<sup>2</sup></span><span>Hawook Jeong<sup>2</sup></span><span>Soonmin Hwang<sup>1</sup></span></p>
       <p className="affil"><span><sup>1</sup>Hanyang University</span><span><sup>2</sup>RideFlux</span></p>
       <div className="actions">
