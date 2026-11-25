@@ -75,7 +75,7 @@
       const ours = n.startsWith('Flux'), col = PAL[n];
       s += `<g class="series${ours ? ' ours' : ''}" data-n="${n}"><line x1="${X(a)}" y1="${Y(b)}" x2="${X(c)}" y2="${Y(d)}" stroke="${col}" stroke-width="${ours ? 1.6 : 1.1}" stroke-dasharray="3 3" stroke-linecap="round" opacity="0.7"/>` +
         `<circle cx="${X(a)}" cy="${Y(b)}" r="${ours ? 5 : 4}" fill="#111" stroke="${col}" stroke-width="1.6"/><circle cx="${X(c)}" cy="${Y(d)}" r="${ours ? 6 : 4.5}" fill="${col}"/>` +
-        T(X(c) + (X(c) > Rr - 90 ? -12 : 10), Y(d) + (n === 'ReCogDrive' || n === 'DiffusionDrive' ? -10 : X(c) > Rr - 90 ? -12 : 4), n.replace(' (Ours)', ''), { a: X(c) > Rr - 90 ? 'end' : 'start', size: ours ? 16 : 11, fill: ours ? '#3d8bff' : col, w: ours ? 700 : 500 }) +
+        (ours ? T(X(c), Y(d) - 14, 'FluxDrive', { a: 'middle', size: 16, fill: col, w: 700 }) : '') + (ours ? '' : T(X(c) + (X(c) > Rr - 90 ? -12 : 10), Y(d) + (n === 'ReCogDrive' || n === 'DiffusionDrive' ? -10 : X(c) > Rr - 90 ? -12 : 4), n.replace(' (Ours)', ''), { a: X(c) > Rr - 90 ? 'end' : 'start', size: ours ? 16 : 11, fill: ours ? '#3d8bff' : col, w: ours ? 700 : 500 })) +
         `<circle class="hit" cx="${X(c)}" cy="${Y(d)}" r="14" fill="transparent"/><circle class="hit" cx="${X(a)}" cy="${Y(b)}" r="12" fill="transparent"/></g>`;
     });
     s += `<g transform="translate(${L + 10},${B - 34})"><circle cx="6" cy="6" r="4" fill="#111" stroke="${mute}" stroke-width="1.5"/>${T(16, 10, 'non-reactive', { a: 'start', size: 11, fill: mute })}<circle cx="104" cy="6" r="4.5" fill="${mute}"/>${T(114, 10, 'reactive', { a: 'start', size: 11, fill: mute })}</g>`;
